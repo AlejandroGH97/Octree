@@ -117,14 +117,12 @@ private:
 		// if(instersecta( xi, xf, yi, yf, zi, zf, node){
 
 		// }
-		if (node->color == 100) {
-			for (int i = 0; i < 4; ++i)
+		if (node->color == 100) { //Intersecta y no es terminal
+			for (int i = 0; i < 8; ++i)
 				draw(node->children[i], xi, xf, yi, yf, zi, zf);
-		} else {
-			for (int i = node->xi; i <= node->xf; ++i) {
-		   		for (int j = node->yi; j <= node->yf; ++j)
-					curPlane(i,j) = node->color;
-			}	
+		} 
+		else { //Intersecta y es terminal, dibujar solo los pixeles que nos sirven
+			
 		}
 		
 	}
@@ -147,13 +145,18 @@ private:
 	}
 
 public:
-    Octree():root(0){};
+    Octree():root(0){
+		curPlane.resize(512,512);
+	};
     Node* getRoot() {return root;}
 
 	void draw(int xi, int xf, int yi, int yf, int zi, int zf) {
-		CImg<char> N(root->xf+1, root->yf+1, 1);
-		draw(root, xi, xf, yi, zf, zi, zf);
-		curPlane.display();
+		if(xi > xf) swap(xi, xf);
+		for(int i = 0; i < 1; i++) {
+			draw(root, xi, xf, yi, zf, i, i);
+			curPlane.display();
+		}	
+		
 	}
 
     void build() {
