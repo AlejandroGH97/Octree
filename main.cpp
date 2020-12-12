@@ -1,7 +1,3 @@
-#define cimg_display  1
-#define cimg_use_png  1
-#define cimg_use_jpeg 1
-#include "CImg.h"
 #include "Octree.h"
 #include <string>
 #include <vector>
@@ -25,19 +21,14 @@ vector<double> vectorize(CImg<double> &img, int m) {
 
 int main() {
 
-    string entry_path = "/Users/panflete/Documents/UTEC/Ciclo 6/EDA/octree/datos cerebros/paciente 1/1/Paciente1CC-27-10-1988- CT from 18-01-2011 S0 I";
-	string final_path;
-	vector<CImg<double>> imgs;
-	for(int i = 0; i < 40; i++) {
-		final_path = entry_path + to_string(i) + ".BMP";
-		imgs.push_back(CImg<double>(final_path.c_str()));
-	}
+	Octree ot;
+	ot.build();
     //CImg<double> A(entry_path.c_str());
     //A.resize(48,48);
     // vector<double> vA = vectorize(A,3); 
-	for(auto e: imgs) {
-		e.display();
-	}
+	// for(auto e: imgs) {
+	// 	e.display();
+	// }
 
     return 0;
 }

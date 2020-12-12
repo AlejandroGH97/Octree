@@ -1,8 +1,12 @@
-#ifndef QUADTREE_QUADTREE_H
-#define QUADTREE_QUADTREE_H
-
+#ifndef OCTREE_H
+#define OCTREE_H
+#include <iostream>
 #include <string>
 #include <fstream>
+#include <vector>
+#define cimg_display  1
+#define cimg_use_png  1
+#define cimg_use_jpeg 1
 #include "CImg.h"
 using namespace cimg_library;
 using namespace std;
@@ -25,18 +29,20 @@ CImg<char>  Binarizar(CImg<float> & img, int umbral)
 }
 
 struct Node {
-    int xi, xf, yi, yf;
+    int xi, xf, yi, yf, zi, zf;
 
     char color = 100;
-    Node* children[4] = {};
+    Node* children[8] = {};
 
     Node(){};
 
-	Node(int xi, int xf, int yi, int yf) {
+	Node(int xi, int xf, int yi, int yf, int zi, int zf) {
         this->xi = xi;
         this->xf = xf;
         this->yi = yi;
         this->yf = yf;
+        this->zi = zi;
+        this->zf = zf;
     }
 	friend ostream& operator<<( ostream &, Node* &);
   	friend istream& operator>>( istream &, Node* &);
@@ -63,40 +69,62 @@ istream& operator>>(istream& stream, Node* & obj) {
 }
 
 
-class QuadTree {
+class Octree {
 private:
     Node* root;
+	std::vector<CImg<char>> current_image;
+	CImg<char> curPlane;
 
-	bool sameColor(int xi, int xf, int yi, int yf, CImg<char>& img) {
-		char pixel = img(xi,yi);
-		for (int i = xi; i <= xf; ++i) {
-			for (int j = yi; j <= yf; ++j) {
-				if (pixel != img(i,j))	return false;
-			}
+	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, std::vector<CImg<char>>& img) {
+		char pixel = img[zi](xi,yi);
+		for(int k = zi; k <= zf; ++k){
+			for (int i = xi; i <= xf; ++i) {
+				for (int j = yi; j <= yf; ++j) {
+					if (pixel != img[k](i,j)) {
+						//std::cout<<xi<<" "<<xf<<" "<<yi<<" "<<yf<<" "<<zi<<" "<<zf<<" not same color.\n"<<std::endl;
+						return false;
+					}
+				}
+			}	
 		}
+
 		return true;
 	}
 
-    void insert(int xi, int xf, int yi, int yf, CImg<char>& img, Node* &n) {
-        n = new Node(xi, xf, yi, yf);
-		if (sameColor(xi, xf, yi, yf, img)) {
-			n->color = img(xi,yi);	
+    void insert(int xi, int xf, int yi, int yf, int zi, int zf, std::vector<CImg<char>>& img, Node* &n) {
+        n = new Node(xi, xf, yi, yf, zi, zf);
+		//std::cout<<xi<<" "<<xf<<" "<<yi<<" "<<yf<<" "<<zi<<" "<<zf<<std::endl;
+		if (sameColor(xi, xf, yi, yf, zi, zf, img) || (xi == xf && yi == yf && zi == zf)) {
+			n->color = img[zi](xi,yi);	
 		} else {
-			insert(xi, (xf+xi)/2, yi, (yf+yi)/2, img, n->children[0]);
-			insert((xf+xi)/2+1, xf, yi, (yf+yi)/2, img, n->children[1]);
-			insert(xi, (xf+xi)/2, (yf+yi)/2+1, yf, img, n->children[2]);
-			insert((xf+xi)/2+1, xf, (yf+yi)/2+1, yf, img, n->children[3]);
+			int zmid = (zf+zi)/2+1;
+			int ymid = (yf+yi)/2;
+			insert(xi, (xf+xi)/2, yi, ymid, zi, (zf+zi)/2, img, n->children[0]);
+			insert((xf+xi)/2+1, xf, yi, ymid, zi, (zf+zi)/2, img, n->children[1]);
+			insert(xi, (xf+xi)/2, ymid+1, yf, zi, (zf+zi)/2, img, n->children[2]);
+			insert((xf+xi)/2+1, xf, ymid+1, yf, zi, (zf+zi)/2, img, n->children[3]);
+			if(zmid > zf) zmid--;
+			insert(xi, (xf+xi)/2, yi, ymid, zmid, zf, img, n->children[4]);
+			insert((xf+xi)/2+1, xf, yi, ymid, zmid, zf, img, n->children[5]);
+			insert(xi, (xf+xi)/2, ymid+1, yf, zmid, zf, img, n->children[6]);
+			insert((xf+xi)/2+1, xf, ymid+1, yf, zmid, zf, img, n->children[7]);
 		}
         
 	}
-	void draw(Node* & node, CImg<char> & N) {
+
+	bool instersecta(int xi, int xf, int yi, int yf, int zi, int zf), Node* node) {
+
+	}
+
+	void draw(Node* & node, int xi, int xf, int yi, int yf, int zi, int zf) {
+		if(instersecta( xi, xf, yi, yf, zi, zf), Node* node)
 		if (node->color == 100) {
 			for (int i = 0; i < 4; ++i)
 				draw(node->children[i], N);
 		} else {
 			for (int i = node->xi; i <= node->xf; ++i) {
 		   		for (int j = node->yi; j <= node->yf; ++j)
-					N(i,j) = node->color;
+					curPlane(i,j) = node->color;
 			}	
 		}
 		
@@ -120,24 +148,32 @@ private:
 	}
 
 public:
-    QuadTree():root(0){};
+    Octree():root(0){};
     Node* getRoot() {return root;}
 
-	void draw() {
+	void draw(int xi, int xf, int yi, int yf, int zi, int zf) {
 		CImg<char> N(root->xf+1, root->yf+1, 1);
-		draw(root, N);
-		N.display();
+		draw(xi, xf, yi, zyf, zi, zf, root);
+		curPlane.display();
 	}
 
-    void build(string name, bool bw = 1) {
-        CImg<char> R;
-		if (bw) R.load(name.c_str());
-		else {
-			CImg<float> A;
-			A.load(name.c_str());
-       		R = Binarizar(A, 120);
+    void build() {
+
+		string entry_path = "/Users/panflete/Documents/UTEC/Ciclo 6/EDA/octree/data/paciente 1/1/Paciente1CC-27-10-1988- CT from 18-01-2011 S0 I";
+		string final_path;
+		std::vector<CImg<char>> cube;
+		CImg<float> R;
+		for(int i = 0; i < 40; i++) {
+			final_path = entry_path + to_string(i) + ".BMP";
+			R = CImg<float>(final_path.c_str());
+			cube.push_back(Binarizar(R,120));
 		}
-        insert(0, R.width()-1, 0, R.height()-1, R, root);
+        
+		// for(auto e: cube) {
+		// 	e.display();
+		// }
+		
+        insert(0, R.width()-1, 0, R.height()-1, 0, 39, cube, root);
     }
 
 	void compress(string name) {
@@ -155,4 +191,4 @@ public:
 };
 
 
-#endif //QUADTREE_QUADTREE_H
+#endif
