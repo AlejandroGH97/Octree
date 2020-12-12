@@ -11,23 +11,19 @@
 using namespace cimg_library;
 using namespace std;
 
-void  Binarizar(CImg<float> & img, int umbral, int z_plane, char cube[][512][512])
+void  Binarizar(CImg<float> & img, int umbral, int z_plane, char*** cube)
 {
-	cout<<"C\n";
     for(int i=0;i< img.width();i++)
         for(int j=0;j< img.height();j++)
         {
             int r = img(i,j,0);
             int g = img(i,j,1);
             int b = img(i,j,2);
-			cout<<"b\n";
             if ( (r+g+b)/3  > umbral)
                 cube[z_plane][i][j] = 255;
             else
                 cube[z_plane][i][j] = 0;
-			cout<<"a\n";
         }
-		cout<<"Fin binarizarn\n";
 }
 
 struct Node {
@@ -76,7 +72,7 @@ private:
     Node* root;
 	CImg<char> curPlane;
 
-	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, char img[][512][512]) {
+	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, char*** img) {
 		char pixel = img[zi][xi][yi];
 		for(int k = zi; k <= zf; ++k){
 			for (int i = xi; i <= xf; ++i) {
@@ -92,9 +88,9 @@ private:
 		return true;
 	}
 
-    void insert(int xi, int xf, int yi, int yf, int zi, int zf, char img[][512][512], Node* &n) {
+    void insert(int xi, int xf, int yi, int yf, int zi, int zf, char*** img, Node* &n) {
         n = new Node(xi, xf, yi, yf, zi, zf);
-		std::cout<<xi<<" "<<xf<<" "<<yi<<" "<<yf<<" "<<zi<<" "<<zf<<std::endl;
+		//std::cout<<xi<<" "<<xf<<" "<<yi<<" "<<yf<<" "<<zi<<" "<<zf<<std::endl;
 		if (sameColor(xi, xf, yi, yf, zi, zf, img) || (xi == xf && yi == yf && zi == zf)) {
 			n->color = img[zi][xi][yi];	
 		} else {
@@ -161,24 +157,34 @@ public:
 	}
 
     void build() {
-		cout<<"z\n";
 		string entry_path = "/Users/panflete/Documents/UTEC/Ciclo 6/EDA/octree/data/paciente 1/1/Paciente1CC-27-10-1988- CT from 18-01-2011 S0 I";
 		string final_path;
-		cout<<"e\n";
-		char cube[40][512][512];
-		cout<<"d\n";
+		char*** cube = new char**[40];
+		for(int i = 0; i < 40; i++) {
+			cube[i] = new char*[512];
+			for(int j = 0; j < 512; j++) {
+				cube[i][j] = new char[512];
+			}
+		}
 		CImg<float> R;
 		for(int i = 0; i < 40; i++) {
 			final_path = entry_path + to_string(i) + ".BMP";
 			R = CImg<float>(final_path.c_str());
 			Binarizar(R,120,i,cube);
 		}
-        cout<<"Paso binarizar.";
+
 		// for(auto e: cube) {
 		// 	e.display();
 		// }
 		
-        //insert(0, R.width()-1, 0, R.height()-1, 0, 39, cube, root);
+        insert(0, R.width()-1, 0, R.height()-1, 0, 39, cube, root);
+		
+		for(int i = 0; i < 40; i++) {
+			for(int j = 0; j < 512; j++) {
+				delete(cube[i][j]);
+			}
+			delete(cube[i]);
+		}
     }
 
 	void compress(string name) {
