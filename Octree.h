@@ -11,21 +11,23 @@
 using namespace cimg_library;
 using namespace std;
 
-CImg<char>  Binarizar(CImg<float> & img, int umbral)
+void  Binarizar(CImg<float> & img, int umbral, int z_plane, char cube[][512][512])
 {
-    CImg<char> R(img.width(),img.height());
+	cout<<"C\n";
     for(int i=0;i< img.width();i++)
         for(int j=0;j< img.height();j++)
         {
             int r = img(i,j,0);
             int g = img(i,j,1);
             int b = img(i,j,2);
+			cout<<"b\n";
             if ( (r+g+b)/3  > umbral)
-                R(i,j) = 255;
+                cube[z_plane][i][j] = 255;
             else
-                R(i,j) = 0;
+                cube[z_plane][i][j] = 0;
+			cout<<"a\n";
         }
-    return R;
+		cout<<"Fin binarizarn\n";
 }
 
 struct Node {
@@ -72,15 +74,14 @@ istream& operator>>(istream& stream, Node* & obj) {
 class Octree {
 private:
     Node* root;
-	std::vector<CImg<char>> current_image;
 	CImg<char> curPlane;
 
-	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, std::vector<CImg<char>>& img) {
-		char pixel = img[zi](xi,yi);
+	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, char img[][512][512]) {
+		char pixel = img[zi][xi][yi];
 		for(int k = zi; k <= zf; ++k){
 			for (int i = xi; i <= xf; ++i) {
 				for (int j = yi; j <= yf; ++j) {
-					if (pixel != img[k](i,j)) {
+					if (pixel != img[k][i][j]) {
 						//std::cout<<xi<<" "<<xf<<" "<<yi<<" "<<yf<<" "<<zi<<" "<<zf<<" not same color.\n"<<std::endl;
 						return false;
 					}
@@ -91,11 +92,11 @@ private:
 		return true;
 	}
 
-    void insert(int xi, int xf, int yi, int yf, int zi, int zf, std::vector<CImg<char>>& img, Node* &n) {
+    void insert(int xi, int xf, int yi, int yf, int zi, int zf, char img[][512][512], Node* &n) {
         n = new Node(xi, xf, yi, yf, zi, zf);
-		//std::cout<<xi<<" "<<xf<<" "<<yi<<" "<<yf<<" "<<zi<<" "<<zf<<std::endl;
+		std::cout<<xi<<" "<<xf<<" "<<yi<<" "<<yf<<" "<<zi<<" "<<zf<<std::endl;
 		if (sameColor(xi, xf, yi, yf, zi, zf, img) || (xi == xf && yi == yf && zi == zf)) {
-			n->color = img[zi](xi,yi);	
+			n->color = img[zi][xi][yi];	
 		} else {
 			int zmid = (zf+zi)/2+1;
 			int ymid = (yf+yi)/2;
@@ -112,15 +113,17 @@ private:
         
 	}
 
-	bool instersecta(int xi, int xf, int yi, int yf, int zi, int zf), Node* node) {
+	bool instersecta(int xi, int xf, int yi, int yf, int zi, int zf, Node* node) {
 
 	}
 
 	void draw(Node* & node, int xi, int xf, int yi, int yf, int zi, int zf) {
-		if(instersecta( xi, xf, yi, yf, zi, zf), Node* node)
+		// if(instersecta( xi, xf, yi, yf, zi, zf, node){
+
+		// }
 		if (node->color == 100) {
 			for (int i = 0; i < 4; ++i)
-				draw(node->children[i], N);
+				draw(node->children[i], xi, xf, yi, yf, zi, zf);
 		} else {
 			for (int i = node->xi; i <= node->xf; ++i) {
 		   		for (int j = node->yi; j <= node->yf; ++j)
@@ -153,27 +156,29 @@ public:
 
 	void draw(int xi, int xf, int yi, int yf, int zi, int zf) {
 		CImg<char> N(root->xf+1, root->yf+1, 1);
-		draw(xi, xf, yi, zyf, zi, zf, root);
+		draw(root, xi, xf, yi, zf, zi, zf);
 		curPlane.display();
 	}
 
     void build() {
-
+		cout<<"z\n";
 		string entry_path = "/Users/panflete/Documents/UTEC/Ciclo 6/EDA/octree/data/paciente 1/1/Paciente1CC-27-10-1988- CT from 18-01-2011 S0 I";
 		string final_path;
-		std::vector<CImg<char>> cube;
+		cout<<"e\n";
+		char cube[40][512][512];
+		cout<<"d\n";
 		CImg<float> R;
 		for(int i = 0; i < 40; i++) {
 			final_path = entry_path + to_string(i) + ".BMP";
 			R = CImg<float>(final_path.c_str());
-			cube.push_back(Binarizar(R,120));
+			Binarizar(R,120,i,cube);
 		}
-        
+        cout<<"Paso binarizar.";
 		// for(auto e: cube) {
 		// 	e.display();
 		// }
 		
-        insert(0, R.width()-1, 0, R.height()-1, 0, 39, cube, root);
+        //insert(0, R.width()-1, 0, R.height()-1, 0, 39, cube, root);
     }
 
 	void compress(string name) {

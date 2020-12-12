@@ -20,8 +20,9 @@ vector<double> vectorize(CImg<double> &img, int m) {
 
 
 int main() {
-
+	cout<<"y\n";
 	Octree ot;
+	cout<<"r\n";
 	ot.build();
     //CImg<double> A(entry_path.c_str());
     //A.resize(48,48);
