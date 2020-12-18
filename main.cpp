@@ -28,6 +28,10 @@ int main() {
 	// for(auto e: imgs) {
 	// 	e.display();
 	// }
+	for(int z = 0; z < 40 ; z++) {
+		ot.getCut(0,0,z,255,0,z,0,255,z);
+	}
+	
 
     return 0;
 }

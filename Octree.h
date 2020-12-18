@@ -20,9 +20,9 @@ void  Binarizar(CImg<float> & img, int umbral, int z_plane, char*** cube)
             int g = img(i,j,1);
             int b = img(i,j,2);
             if ( (r+g+b)/3  > umbral)
-                cube[z_plane][i][j] = 255;
-            else
                 cube[z_plane][i][j] = 0;
+            else
+                cube[z_plane][i][j] = 255;
         }
 }
 
@@ -71,6 +71,7 @@ class Octree {
 private:
     Node* root;
 	CImg<char> curPlane;
+	int a, b, c, d;
 
 	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, char*** img) {
 		char pixel = img[zi][xi][yi];
@@ -109,21 +110,48 @@ private:
         
 	}
 
-	bool instersecta(int xi, int xf, int yi, int yf, int zi, int zf, Node* node) {
-
+	bool intersecta(Node* & node) { 
+		//Usar ecuacion del plano
+		return ((a*node->xi + b*node->yi + c*node->zi + d > 0) == (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
+				((a*node->xi + b*node->yi + c*node->zi + d < 0) == (a*node->xf + b*node->yf + c*node->zf + d > 0)) ||
+				(a*node->xi + b*node->yi + c*node->zi + d == 0) ||
+				(a*node->xf + b*node->yf + c*node->zf + d == 0);
 	}
 
-	void draw(Node* & node, int xi, int xf, int yi, int yf, int zi, int zf) {
-		// if(instersecta( xi, xf, yi, yf, zi, zf, node){
+	void getCut(Node* & node) {
+		if(node->color != 100) {
+			//Llenar pixeles
+			for(int k = node->zi; k <= node->zf; ++k){
+				for (int i = node->xi; i <= node->xf; ++i) {
+					for (int j = node->yi; j <= node->yf; ++j) {
+						//Reemplazar valores en ecuacion de plano, si da 0 esta en el plano y llenamos curPlane.
+						if(a*i + b*j + c*k + d == 0) {
 
-		// }
-		if (node->color == 100) { //Intersecta y no es terminal
-			for (int i = 0; i < 8; ++i)
-				draw(node->children[i], xi, xf, yi, yf, zi, zf);
-		} 
-		else { //Intersecta y es terminal, dibujar solo los pixeles que nos sirven
-			
+							//CAMBIAR PARA PLANOS DIAGONALES
+
+							if(a > 0) {//j = x, k = y
+								curPlane(j,k) = node->color;
+							}
+							else if(b > 0) {//i = x, k = y
+								curPlane(i,k) = node->color;
+							}
+							else {//i = x, j = y
+								curPlane(i,j) = node->color;
+							}
+
+						}
+						
+					}
+				}
+			}
+			return;
 		}
+		for(int i = 0; i < 7; i++) {
+			if(intersecta(node->children[i])) {
+				getCut(node->children[i]);
+			}
+		}
+		
 		
 	}
 
@@ -150,13 +178,33 @@ public:
 	};
     Node* getRoot() {return root;}
 
-	void draw(int xi, int xf, int yi, int yf, int zi, int zf) {
-		if(xi > xf) swap(xi, xf);
-		for(int i = 0; i < 1; i++) {
-			draw(root, xi, xf, yi, zf, i, i);
-			curPlane.display();
-		}	
-		
+	void getCut(int p1_x, int p1_y, int p1_z, int p2_x, int p2_y, int p2_z, int p3_x, int p3_y, int p3_z) {
+		curPlane.clear();
+		curPlane.resize(512,512);
+		//Sacar ecuacion de plano y guardar
+		int PQ[3], PR[3];
+		PQ[0] = p2_x - p1_x;
+		PQ[1] = p2_y - p1_y;
+		PQ[2] = p2_z - p1_z;
+
+		PR[0] = p3_x - p1_x;
+		PR[1] = p3_y - p1_y;
+		PR[2] = p3_z - p1_z;
+
+		a = PQ[1] * PR[2] - PQ[2] * PR[1];
+		b = -(PQ[0] * PR[2] - PQ[2] * PR[0]);
+		c = PQ[0] * PR[1] - PQ[1] * PR[0];
+		d = - a * p1_x - b * p1_y - c * p1_z;
+
+		cout<<"Ecuacion de curva\n";
+		cout<<"a: "<<a;
+		cout<<"\nb: "<<b;
+		cout<<"\nc: "<<c;
+		cout<<"\nd: "<<d<<endl;
+
+		getCut(root);
+
+		curPlane.display();	
 	}
 
     void build() {
@@ -171,14 +219,12 @@ public:
 		}
 		CImg<float> R;
 		for(int i = 0; i < 40; i++) {
+
 			final_path = entry_path + to_string(i) + ".BMP";
 			R = CImg<float>(final_path.c_str());
-			Binarizar(R,120,i,cube);
-		}
+			Binarizar(R,140,i,cube);
 
-		// for(auto e: cube) {
-		// 	e.display();
-		// }
+		}
 		
         insert(0, R.width()-1, 0, R.height()-1, 0, 39, cube, root);
 		
@@ -188,6 +234,7 @@ public:
 			}
 			delete(cube[i]);
 		}
+		delete[](cube);
     }
 
 	void compress(string name) {
