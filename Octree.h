@@ -185,7 +185,7 @@ public:
 	};
     Node* getRoot() {return root;}
 
-	void getCut(int p1_x, int p1_y, int p1_z, int p2_x, int p2_y, int p2_z, int p3_x, int p3_y, int p3_z) {
+	void getCut(int p1_x, int p1_y, int p1_z, int p2_x, int p2_y, int p2_z, int p3_x, int p3_y, int p3_z, string filename) {
 		curPlane.clear();
 		//Sacar ecuacion de plano y guardar
 		int PQ[3], PR[3];
@@ -217,15 +217,15 @@ public:
 		}
 		
 
-		cout<<"Ecuacion de curva\n";
-		cout<<"a: "<<a;
-		cout<<"\nb: "<<b;
-		cout<<"\nc: "<<c;
-		cout<<"\nd: "<<d<<endl;
+		// cout<<"Ecuacion de curva\n";
+		// cout<<"a: "<<a;
+		// cout<<"\nb: "<<b;
+		// cout<<"\nc: "<<c;
+		// cout<<"\nd: "<<d<<endl;
 
 		getCut(root);
 
-		curPlane.display();	
+		curPlane.save_jpeg(filename.c_str(), 60);	
 	}
 
     void build() {

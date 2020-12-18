@@ -28,8 +28,10 @@ int main() {
 	// for(auto e: imgs) {
 	// 	e.display();
 	// }
-	for(int z = 0; z < 50 ; z++) {
-		ot.getCut(z,0,0,z,0,40,z,255,0);
+	string filename;
+	for(int z = 0; z < 40 ; z++) {
+		filename = "gif/img"+to_string(z)+".jpeg";
+		ot.getCut(0,0,z,0,255,z,255,0,z, filename);
 	}
 	
 
