@@ -97,11 +97,17 @@ private:
 		} else {
 			int zmid = (zf+zi)/2+1;
 			int ymid = (yf+yi)/2;
+			if(ymid > yf) cout<<"Y OVERFLOW\n";
+			if(ymid > yf) ymid--;
 			insert(xi, (xf+xi)/2, yi, ymid, zi, (zf+zi)/2, img, n->children[0]);
 			insert((xf+xi)/2+1, xf, yi, ymid, zi, (zf+zi)/2, img, n->children[1]);
 			insert(xi, (xf+xi)/2, ymid+1, yf, zi, (zf+zi)/2, img, n->children[2]);
 			insert((xf+xi)/2+1, xf, ymid+1, yf, zi, (zf+zi)/2, img, n->children[3]);
-			if(zmid > zf) zmid--;
+			if(zmid > zf) {
+				// cout<<"Z OVERFLOW\n";
+				zmid--;
+				// return;
+			}
 			insert(xi, (xf+xi)/2, yi, ymid, zmid, zf, img, n->children[4]);
 			insert((xf+xi)/2+1, xf, yi, ymid, zmid, zf, img, n->children[5]);
 			insert(xi, (xf+xi)/2, ymid+1, yf, zmid, zf, img, n->children[6]);
@@ -112,13 +118,14 @@ private:
 
 	bool intersecta(Node* & node) { 
 		//Usar ecuacion del plano
-		return ((a*node->xi + b*node->yi + c*node->zi + d > 0) == (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
-				((a*node->xi + b*node->yi + c*node->zi + d < 0) == (a*node->xf + b*node->yf + c*node->zf + d > 0)) ||
+		return ((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
+				((a*node->xi + b*node->yi + c*node->zi + d < 0) && (a*node->xf + b*node->yf + c*node->zf + d > 0)) ||
 				(a*node->xi + b*node->yi + c*node->zi + d == 0) ||
 				(a*node->xf + b*node->yf + c*node->zf + d == 0);
 	}
 
 	void getCut(Node* & node) {
+		if(!node) return;
 		if(node->color != 100) {
 			//Llenar pixeles
 			for(int k = node->zi; k <= node->zf; ++k){
@@ -129,10 +136,10 @@ private:
 
 							//CAMBIAR PARA PLANOS DIAGONALES
 
-							if(a > 0) {//j = x, k = y
+							if(a != 0) {//j = x, k = y
 								curPlane(j,k) = node->color;
 							}
-							else if(b > 0) {//i = x, k = y
+							else if(b != 0) {//i = x, k = y
 								curPlane(i,k) = node->color;
 							}
 							else {//i = x, j = y
@@ -146,7 +153,7 @@ private:
 			}
 			return;
 		}
-		for(int i = 0; i < 7; i++) {
+		for(int i = 0; i < 8; i++) {
 			if(intersecta(node->children[i])) {
 				getCut(node->children[i]);
 			}
@@ -180,7 +187,6 @@ public:
 
 	void getCut(int p1_x, int p1_y, int p1_z, int p2_x, int p2_y, int p2_z, int p3_x, int p3_y, int p3_z) {
 		curPlane.clear();
-		curPlane.resize(512,512);
 		//Sacar ecuacion de plano y guardar
 		int PQ[3], PR[3];
 		PQ[0] = p2_x - p1_x;
@@ -195,6 +201,21 @@ public:
 		b = -(PQ[0] * PR[2] - PQ[2] * PR[0]);
 		c = PQ[0] * PR[1] - PQ[1] * PR[0];
 		d = - a * p1_x - b * p1_y - c * p1_z;
+
+
+		//busqueda binaria
+
+
+		if(a != 0) {//j = x, k = y
+			curPlane.resize(512,40);
+		}
+		else if(b != 0) {//i = x, k = y
+			curPlane.resize(512,40);
+		}
+		else {//i = x, j = y
+			curPlane.resize(512,512);
+		}
+		
 
 		cout<<"Ecuacion de curva\n";
 		cout<<"a: "<<a;
