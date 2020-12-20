@@ -28,12 +28,12 @@ int main() {
 	// for(auto e: imgs) {
 	// 	e.display();
 	// }
-	string filename;
-	for(int z = 0; z < 40 ; z++) {
-		filename = "gif/img"+to_string(z)+".jpeg";
-		ot.getCut(0,0,z,0,255,z,255,0,z, filename);
-	}
-	
+	// string filename;
+	// for(int z = 0; z < 40 ; z++) {
+	// 	filename = "gif/img"+to_string(z)+".jpeg";
+	// 	ot.getCut(0,0,z,0,255,z,255,0,z, filename);
+	// }
+	ot.getCut(0,0,0,512,0,0,0,512,0,"a");
 
     return 0;
 }

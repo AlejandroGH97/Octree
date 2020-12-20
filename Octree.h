@@ -118,10 +118,29 @@ private:
 
 	bool intersecta(Node* & node) { 
 		//Usar ecuacion del plano
-		return ((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
-				((a*node->xi + b*node->yi + c*node->zi + d < 0) && (a*node->xf + b*node->yf + c*node->zf + d > 0)) ||
-				(a*node->xi + b*node->yi + c*node->zi + d == 0) ||
-				(a*node->xf + b*node->yf + c*node->zf + d == 0);
+		return (((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
+			((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0))) ||
+			//
+			(((a*node->xf + b*node->yi + c*node->zi + d > 0) && (a*node->xi + b*node->yf + c*node->zf + d < 0)) ||
+			((a*node->xf + b*node->yi + c*node->zi + d < 0) && (a*node->xi + b*node->yf + c*node->zf + d > 0))) ||
+
+			//
+			(((a*node->xf + b*node->yf + c*node->zi + d > 0) && (a*node->xi + b*node->yi + c*node->zf + d < 0)) ||
+			((a*node->xf + b*node->yf + c*node->zi + d < 0) && (a*node->xi + b*node->yi + c*node->zf + d > 0))) ||
+
+			//
+			(((a*node->xi + b*node->yf + c*node->zi + d > 0) && (a*node->xf + b*node->yi + c*node->zf + d < 0)) ||
+			((a*node->xi + b*node->yf + c*node->zi + d < 0) && (a*node->xf + b*node->yi + c*node->zf + d > 0))) ||
+	
+			//
+			(a*node->xi + b*node->yi + c*node->zi + d == 0) ||
+			(a*node->xf + b*node->yi + c*node->zi + d == 0) ||
+			(a*node->xi + b*node->yf + c*node->zi + d == 0) ||
+			(a*node->xi + b*node->yi + c*node->zf + d == 0) ||
+			(a*node->xf + b*node->yf + c*node->zi + d == 0) ||
+			(a*node->xf + b*node->yi + c*node->zf + d == 0) ||
+			(a*node->xi + b*node->yf + c*node->zf + d == 0) ||
+			(a*node->xf + b*node->yf + c*node->zf + d == 0);
 	}
 
 	void getCut(Node* & node) {
@@ -225,7 +244,8 @@ public:
 
 		getCut(root);
 
-		curPlane.save_jpeg(filename.c_str(), 60);	
+		//curPlane.save_jpeg(filename.c_str(), 60);	
+		curPlane.display();
 	}
 
     void build() {
