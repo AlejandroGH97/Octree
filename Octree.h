@@ -4,6 +4,7 @@
 #include <string>
 #include <fstream>
 #include <vector>
+#include <cmath>
 #define cimg_display  1
 #define cimg_use_png  1
 #define cimg_use_jpeg 1
@@ -71,7 +72,8 @@ class Octree {
 private:
     Node* root;
 	CImg<char> curPlane;
-	int a, b, c, d;
+	long a, b, c, d;
+	int pixcount = 0;
 
 	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, char*** img) {
 		char pixel = img[zi][xi][yi];
@@ -118,14 +120,32 @@ private:
 
 	bool intersecta(Node* & node) { 
 		//Usar ecuacion del plano
-		return ((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
-				((a*node->xi + b*node->yi + c*node->zi + d < 0) && (a*node->xf + b*node->yf + c*node->zf + d > 0)) ||
-				(a*node->xi + b*node->yi + c*node->zi + d == 0) ||
-				(a*node->xf + b*node->yf + c*node->zf + d == 0);
+		return (((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
+			((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0))) ||
+			//
+			(((a*node->xf + b*node->yi + c*node->zi + d > 0) && (a*node->xi + b*node->yf + c*node->zf + d < 0)) ||
+			((a*node->xf + b*node->yi + c*node->zi + d < 0) && (a*node->xi + b*node->yf + c*node->zf + d > 0))) ||
+
+			//
+			(((a*node->xf + b*node->yf + c*node->zi + d > 0) && (a*node->xi + b*node->yi + c*node->zf + d < 0)) ||
+			((a*node->xf + b*node->yf + c*node->zi + d < 0) && (a*node->xi + b*node->yi + c*node->zf + d > 0))) ||
+
+			//
+			(((a*node->xi + b*node->yf + c*node->zi + d > 0) && (a*node->xf + b*node->yi + c*node->zf + d < 0)) ||
+			((a*node->xi + b*node->yf + c*node->zi + d < 0) && (a*node->xf + b*node->yi + c*node->zf + d > 0))) ||
+	
+			//
+			(a*node->xi + b*node->yi + c*node->zi + d == 0) ||
+			(a*node->xf + b*node->yi + c*node->zi + d == 0) ||
+			(a*node->xi + b*node->yf + c*node->zi + d == 0) ||
+			(a*node->xi + b*node->yi + c*node->zf + d == 0) ||
+			(a*node->xf + b*node->yf + c*node->zi + d == 0) ||
+			(a*node->xf + b*node->yi + c*node->zf + d == 0) ||
+			(a*node->xi + b*node->yf + c*node->zf + d == 0) ||
+			(a*node->xf + b*node->yf + c*node->zf + d == 0);
 	}
 
 	void getCut(Node* & node) {
-		if(!node) return;
 		if(node->color != 100) {
 			//Llenar pixeles
 			for(int k = node->zi; k <= node->zf; ++k){
@@ -134,16 +154,28 @@ private:
 						//Reemplazar valores en ecuacion de plano, si da 0 esta en el plano y llenamos curPlane.
 						if(a*i + b*j + c*k + d == 0) {
 
-							//CAMBIAR PARA PLANOS DIAGONALES
+							pixcount++;
 
-							if(a != 0) {//j = x, k = y
+							if(a != 0 && b == 0 && c == 0) {//j = x, k = y
 								curPlane(j,k) = node->color;
 							}
-							else if(b != 0) {//i = x, k = y
+							else if(a == 0 && b != 0 && c == 0) {//i = x, k = y
 								curPlane(i,k) = node->color;
 							}
-							else {//i = x, j = y
+							else if(a == 0 && b == 0 && c != 0){//i = x, j = y
 								curPlane(i,j) = node->color;
+							}
+							else if(c == 0){ //diagonal en plano xy
+								//X es sqrt(x^2 + y^2) Y es z
+								curPlane((int)sqrt((i*i)+(j*j)),k) = node->color;
+							}
+							else if(b == 0){ //diagonal en plano xz
+								//X es sqrt(x^2 + z^2) Y es y
+								curPlane((int)sqrt((i*i)+(k*k)),j) = node->color;
+							}
+							else if(a == 0){ //diagonal en plano yz
+								//X es sqrt(z^2 + y^2) Y es x
+								curPlane((int)sqrt((k*k)+(j*j)),i) = node->color;
 							}
 
 						}
@@ -203,29 +235,42 @@ public:
 		d = - a * p1_x - b * p1_y - c * p1_z;
 
 
-		//busqueda binaria
 
-
-		if(a != 0) {//j = x, k = y
+		if(a != 0 && b == 0 && c == 0) {//j = x, k = y
 			curPlane.resize(512,40);
 		}
-		else if(b != 0) {//i = x, k = y
+		else if(a == 0 && b != 0 && c == 0) {//i = x, k = y
 			curPlane.resize(512,40);
 		}
-		else {//i = x, j = y
+		else if(a == 0 && b == 0 && c != 0){//i = x, j = y
 			curPlane.resize(512,512);
+		}
+		else if(c == 0){ //diagonal en plano xy
+			//X es sqrt(x^2 + y^2) Y es z
+			
+			curPlane.resize(sqrt(512*512*2),40);
+		}
+		else if(b == 0){ //diagonal en plano xz
+			//X es sqrt(x^2 + z^2) Y es y
+			//cout<<"Diagonal en plano xz\n";
+			curPlane.resize(sqrt(512*512+40*40),512);
+		}
+		else if(a == 0){ //diagonal en plano yz
+			//X es sqrt(z^2 + y^2) Y es x
+			curPlane.resize(sqrt(512*512+40*40),512);
 		}
 		
 
-		// cout<<"Ecuacion de curva\n";
-		// cout<<"a: "<<a;
-		// cout<<"\nb: "<<b;
-		// cout<<"\nc: "<<c;
-		// cout<<"\nd: "<<d<<endl;
+		cout<<"Ecuacion de curva\n";
+		cout<<"a: "<<a;
+		cout<<"\nb: "<<b;
+		cout<<"\nc: "<<c;
+		cout<<"\nd: "<<d<<endl;
 
 		getCut(root);
-
-		curPlane.save_jpeg(filename.c_str(), 60);	
+		cout<<"\n\nPixel count: "<<pixcount<<endl;
+		//curPlane.save_jpeg(filename.c_str(), 60);	
+		curPlane.display();
 	}
 
     void build() {
@@ -243,7 +288,7 @@ public:
 
 			final_path = entry_path + to_string(i) + ".BMP";
 			R = CImg<float>(final_path.c_str());
-			Binarizar(R,140,i,cube);
+			Binarizar(R,145,i,cube);
 
 		}
 		
