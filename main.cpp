@@ -123,7 +123,7 @@ int main() {
 
 
 	// std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-	// ot.getCut(0,0,0,511,0,0,0,511,0,511,511,0,"a"); //First layer
+	ot.getCut(0,0,0,511,0,0,0,511,0,511,511,0,"a"); //First layer
 	// std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	// std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
 	// std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() << "[ns]" << std::endl;
@@ -139,11 +139,11 @@ int main() {
 	// 		512,512,40,
 	// 		"a"); //Lado B
 
-	ot.getCut(0,0,0,
-			512,512,0,
-			0,0,40,
-			512,512,40,
-			"a"); //Lado A
+	// ot.getCut(0,0,0,
+	// 		512,512,0,
+	// 		0,0,40,
+	// 		512,512,40,
+	// 		"a"); //Lado A
 
 	// ot.getCut(0,0,0,
 	// 		0,512,0,

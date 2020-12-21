@@ -221,8 +221,8 @@ public:
 
 		getCut(root);
 		//cout<<"Total pixels: "<<pxcount<<endl;
-		curPlane.save_jpeg(filename.c_str(), 60);	
-		//curPlane.display();
+		//curPlane.save_jpeg(filename.c_str(), 60);	
+		curPlane.display();
 	}
 
     void build() {
