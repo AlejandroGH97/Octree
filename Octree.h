@@ -72,6 +72,8 @@ private:
     Node* root;
 	CImg<char> curPlane;
 	int a, b, c, d;
+	int p[3];
+	int pxcount = 0;
 
 	bool sameColor(int xi, int xf, int yi, int yf, int zi, int zf, char*** img) {
 		char pixel = img[zi][xi][yi];
@@ -103,6 +105,7 @@ private:
 			insert((xf+xi)/2+1, xf, yi, ymid, zi, (zf+zi)/2, img, n->children[1]);
 			insert(xi, (xf+xi)/2, ymid+1, yf, zi, (zf+zi)/2, img, n->children[2]);
 			insert((xf+xi)/2+1, xf, ymid+1, yf, zi, (zf+zi)/2, img, n->children[3]);
+			if(xi == xf && yi == yf && zmid > zf) return;
 			if(zmid > zf) {
 				// cout<<"Z OVERFLOW\n";
 				zmid--;
@@ -118,21 +121,11 @@ private:
 
 	bool intersecta(Node* & node) { 
 		//Usar ecuacion del plano
-		return (((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0)) ||
-			((a*node->xi + b*node->yi + c*node->zi + d > 0) && (a*node->xf + b*node->yf + c*node->zf + d < 0))) ||
-			//
-			(((a*node->xf + b*node->yi + c*node->zi + d > 0) && (a*node->xi + b*node->yf + c*node->zf + d < 0)) ||
-			((a*node->xf + b*node->yi + c*node->zi + d < 0) && (a*node->xi + b*node->yf + c*node->zf + d > 0))) ||
-
-			//
-			(((a*node->xf + b*node->yf + c*node->zi + d > 0) && (a*node->xi + b*node->yi + c*node->zf + d < 0)) ||
-			((a*node->xf + b*node->yf + c*node->zi + d < 0) && (a*node->xi + b*node->yi + c*node->zf + d > 0))) ||
-
-			//
-			(((a*node->xi + b*node->yf + c*node->zi + d > 0) && (a*node->xf + b*node->yi + c*node->zf + d < 0)) ||
-			((a*node->xi + b*node->yf + c*node->zi + d < 0) && (a*node->xf + b*node->yi + c*node->zf + d > 0))) ||
+		return ((a*node->xi + b*node->yi + c*node->zi + d >= 0) != (a*node->xf + b*node->yf + c*node->zf + d >= 0)) ||
+			((a*node->xf + b*node->yi + c*node->zi + d >= 0) != (a*node->xi + b*node->yf + c*node->zf + d >= 0)) ||
+			((a*node->xf + b*node->yf + c*node->zi + d >= 0) != (a*node->xi + b*node->yi + c*node->zf + d >= 0)) ||
+			((a*node->xi + b*node->yf + c*node->zi + d >= 0) != (a*node->xf + b*node->yi + c*node->zf + d >= 0)) ||
 	
-			//
 			(a*node->xi + b*node->yi + c*node->zi + d == 0) ||
 			(a*node->xf + b*node->yi + c*node->zi + d == 0) ||
 			(a*node->xi + b*node->yf + c*node->zi + d == 0) ||
@@ -147,22 +140,31 @@ private:
 		if(!node) return;
 		if(node->color != 100) {
 			//Llenar pixeles
-			for(int k = node->zi; k <= node->zf; ++k){
-				for (int i = node->xi; i <= node->xf; ++i) {
-					for (int j = node->yi; j <= node->yf; ++j) {
+			for(int k = node->zi; k <= node->zf; k++){
+				for (int j = node->yi; j <= node->yf; j++) {
+					for (int i = node->xi; i <= node->xf; i++) {
 						//Reemplazar valores en ecuacion de plano, si da 0 esta en el plano y llenamos curPlane.
 						if(a*i + b*j + c*k + d == 0) {
+							
+							pxcount++;
 
-							//CAMBIAR PARA PLANOS DIAGONALES
-
-							if(a != 0) {//j = x, k = y
+							if(a != 0 && b == 0 && c == 0) {//j = x, k = y
 								curPlane(j,k) = node->color;
 							}
-							else if(b != 0) {//i = x, k = y
+							else if(a == 0 && b != 0 && c == 0) {//i = x, k = y
 								curPlane(i,k) = node->color;
 							}
-							else {//i = x, j = y
+							else if(a == 0 && b == 0 && c != 0){//i = x, j = y
 								curPlane(i,j) = node->color;
+							}
+							else if(a == 0){ //y = yz
+								curPlane(i,(int)sqrt(pow(p[1]-j,2)+pow(p[2]-k,2))) = node->color;
+							}
+							else if(b == 0) { //y = y
+								curPlane((int)sqrt(pow(p[0]-i,2)+pow(p[2]-k,2)),j) = node->color;
+							}
+							else  if(c == 0){ //y = z
+								curPlane((int)sqrt(pow(p[0]-i,2)+pow(p[1]-j,2)),k) = node->color;
 							}
 
 						}
@@ -204,8 +206,12 @@ public:
 	};
     Node* getRoot() {return root;}
 
-	void getCut(int p1_x, int p1_y, int p1_z, int p2_x, int p2_y, int p2_z, int p3_x, int p3_y, int p3_z, string filename) {
+	void getCut(int p1_x, int p1_y, int p1_z, int p2_x, int p2_y, int p2_z, int p3_x, int p3_y, int p3_z, int p4_x, int p4_y, int p4_z, string filename) {
 		curPlane.clear();
+		pxcount = 0;
+		p[0] = p1_x;
+		p[1] = p1_y;
+		p[2] = p1_z;
 		//Sacar ecuacion de plano y guardar
 		int PQ[3], PR[3];
 		PQ[0] = p2_x - p1_x;
@@ -221,35 +227,45 @@ public:
 		c = PQ[0] * PR[1] - PQ[1] * PR[0];
 		d = - a * p1_x - b * p1_y - c * p1_z;
 
+		if(a*p4_x + b*p4_y + c*p4_z + d != 0) {
+			cout<<"Corte invalido.\n";
+			return;
+		}
 
-		//busqueda binaria
-
-
-		if(a != 0) {//j = x, k = y
+		if(a != 0 && b == 0 && c == 0) {//j = x, k = y
 			curPlane.resize(512,40);
 		}
-		else if(b != 0) {//i = x, k = y
+		else if(a == 0 && b != 0 && c == 0) {//i = x, k = y
 			curPlane.resize(512,40);
 		}
-		else {//i = x, j = y
+		else if(a == 0 && b == 0 && c != 0){//i = x, j = y
 			curPlane.resize(512,512);
+		}
+		else if(a == 0){ //y = yz, LADO B
+			curPlane.resize(512,sqrt(512*512 + 40*40));
+		}
+		else if(b == 0) { //y = xz, LADO C
+			curPlane.resize(sqrt(512*512 + 40*40),512);
+		}
+		else  if(c == 0){ //y = xy, LADO A
+			curPlane.resize(sqrt(512*512*2),40);
 		}
 		
 
-		// cout<<"Ecuacion de curva\n";
+		// cout<<"Ecuacion de plano\n";
 		// cout<<"a: "<<a;
 		// cout<<"\nb: "<<b;
 		// cout<<"\nc: "<<c;
 		// cout<<"\nd: "<<d<<endl;
 
 		getCut(root);
-
-		//curPlane.save_jpeg(filename.c_str(), 60);	
-		curPlane.display();
+		//cout<<"Total pixels: "<<pxcount<<endl;
+		curPlane.save_jpeg(filename.c_str(), 60);	
+		//curPlane.display();
 	}
 
     void build() {
-		string entry_path = "/Users/panflete/Documents/UTEC/Ciclo 6/EDA/octree/data/paciente 1/1/Paciente1CC-27-10-1988- CT from 18-01-2011 S0 I";
+		string entry_path = "data/paciente 1/1/Paciente1CC-27-10-1988- CT from 18-01-2011 S0 I";
 		string final_path;
 		char*** cube = new char**[40];
 		for(int i = 0; i < 40; i++) {
