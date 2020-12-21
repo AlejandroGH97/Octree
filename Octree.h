@@ -42,30 +42,8 @@ struct Node {
         this->zi = zi;
         this->zf = zf;
     }
-	friend ostream& operator<<( ostream &, Node* &);
-  	friend istream& operator>>( istream &, Node* &);
+
 };
-
-ostream& operator<<(ostream& stream, Node* & obj) {
-	stream.write((char*)&obj->xi, sizeof(int));
-    stream.write((char*)&obj->xf, sizeof(int));
-    stream.write((char*)&obj->yi, sizeof(int));
-    stream.write((char*)&obj->yf, sizeof(int));
-    stream.write((char*)&obj->color, sizeof(char));
-
-	return stream;
-}
-
-istream& operator>>(istream& stream, Node* & obj) {
-	stream.read((char*)&obj->xi, sizeof(int));
-	stream.read((char*)&obj->xf, sizeof(int));
-	stream.read((char*)&obj->yi, sizeof(int));
-	stream.read((char*)&obj->yf, sizeof(int));
-	stream.read((char*)&obj->color, sizeof(char));
-	
-	return stream;
-}
-
 
 class Octree {
 private:
@@ -183,23 +161,6 @@ private:
 		
 	}
 
-	void compress(std::ofstream &file, Node* &n) {
-		file << n;
-		if (n->color == 100) {
-        	for (int i = 0; i < 4; ++i)
-				compress(file, n->children[i]);	
-        }
-	}
-
-	void load(std::ifstream &file, Node* &n) {
-		n = new Node;
-		file >> n;	
-	   	if (n->color == 100) {
-			for (int i = 0; i < 4; ++i)
-				load(file, n->children[i]);
-		}
-	}
-
 public:
     Octree():root(0){
 		curPlane.resize(512,512);
@@ -293,17 +254,6 @@ public:
 		}
 		delete[](cube);
     }
-
-	void compress(string name) {
-		std::ofstream file(name, std::ios::binary);
-		compress(file, root);		
-	}
-
-
-	void load(string name) {
-		std::ifstream file(name, std::ios::binary);
-		load(file, root);
-	}
 
 
 };
